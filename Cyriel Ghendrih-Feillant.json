@@ -1,0 +1,518 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "TP Cyriel GHENDRIH-FEILLANT Documentation",
+    "version": "1.0.0-oas3"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080"
+    },
+    {
+      "url": "https://localhost:8080"
+    }
+  ],
+  "paths": {
+    "/login/{role}": {
+      "post": {
+        "description": "L'opération de login nécessite le rôle (Bank ou user), ainsi que le numéro de compte et le mot de passe. Cette route n'est pas protégée par un token mais renvoie un token à la fin de l'opération. Il sera indiquée que le token aura une durée de validité de maximum 4h et qu'en cas d'inactivité de plus de 15 minutes il sera supprimé et la session expirera.",
+        "operationId": "loginPost",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Authentication"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "description": "Access Denied"
+          }
+        }
+      }
+    },
+    "/sign_up": {
+      "post": {
+        "description": "La route sign_up permet de se créer un compte. Elle ne nécessite donc aucune sécurité via token. Il s'agit d'un simple formulaire. A la fin de l'opération les informations de connexion sont renvoyées. Pour des raisons de sécurité évidente les éléments de connexion devront être changés dès la première connexion. Cette étape ne donne pas lieu à la génération d'un token.",
+        "operationId": "user_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/User"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/log_out/{role}": {
+      "delete": {
+        "description": "La déconnexion nécessite de valider le rôle et le token. Une fois la déconnexion réalisée le token est supprimé. Il ne sera pas possible de se reconnecter avec ce token. L'opération ne nécessite aucun élément puisque le token permet d'identifier l'user. Une fois supprimer, un retour arrière ne permettra pas d'accéder aux ressources puisque celui-ci aura été supprimé.",
+        "operationId": "protectedGet",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "403": {
+            "description": "Access Denied",
+            "x-security-scopes": [
+              "bank"
+            ]
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/dodebit/{role}": {
+      "post": {
+        "description": "La route dodebit permet de débiter le compte du porteur. Cette route ne prend que les valeurs suivantes account, montant, date, origin (from) et la référence commande. L'idée ici est d'éffectuer un débit sur le compte cible d'un client. Cette opération ne doit être réalisable que par la banque elle-même. Il s'agit ici d'un débit du point de vue bancaire. Ici la vérification de l'user et du token est également obligatoire",
+        "operationId": "dodebit",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/creditdebit"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resource"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access Denied",
+            "x-security-scopes": [
+              "bank"
+            ]
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/docredit/{role}": {
+      "post": {
+        "description": "La route docredit permet de créditer le compte du porteur. Cette route ne prend les valeurs suivantes account, montant, date, origin (from) et la référence commande. L'idée ici est d'éffectuer un crédit sur le compte cible d'un client. Cette opération ne doit être réalisable que par la banque elle-même. Un utilisateur ne devrait pas pouvoir réaliser lui même l'opération pour des raison évidentes. Il s'agit ici du crédit du point de vu bancaire Cette route nécessite une vérification du type d'user mais également du token.",
+        "operationId": "docredit",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/creditdebit"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "403": {
+            "description": "Access Denied"
+          }
+        },
+        "x-security-scopes": [
+          "bank"
+        ],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/dobanktransfer/{role}": {
+      "post": {
+        "description": "Le dobanktransfer est une route qui nécessite la vérification du token jwt. Elle est appelée à l'initiative du porteur et permet de réaliser un virement. Elle prend en entrée le montant, la target (interne à la banque ou externe), le compte cible et enfin la raison. L'objectif ici est d'initier le virement. La banque aura des étapes de vérifications et de contrôles.",
+        "operationId": "dobanktransfer",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Transfer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Transferresponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access Denied"
+          }
+        },
+        "x-security-scopes": [
+          "user"
+        ],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/checkbanktransfer/{id}/{role}": {
+      "get": {
+        "description": "Le checkbanktransfer permet de vérifier l'état d'un virement. Il doit donc avoir en entré l'ID du virement, et doit renvoyer le statut du virement ainsi que la date associée au statut. Comme les autres routes, il faudra vérifier la validiter du token à cette étape afin de sécuriser cet élément.",
+        "operationId": "checkstatus",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Transferresponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access Denied"
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "x-security-scopes": [
+          "user"
+        ]
+      },
+      "x-swagger-router-controller": "main-controller"
+    },
+    "/checkaccountbalance/{role}": {
+      "get": {
+        "description": "Cette route permet d'effectuer la vérification de la balance du compte. Elle doit renvoyer à minima la balance du compte et si possible l'historique des transactions réalisées. Comme les autres routes celle-ci nécessite une vérification du token jwt.",
+        "operationId": "checkaccountbalance",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/balance"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access Denied"
+          }
+        },
+        "x-security-scopes": [
+          "user"
+        ],
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "balance": {
+        "type": "object",
+        "properties": {
+          "solde": {
+            "type": "integer"
+          },
+          "historique": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "ref": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Authentication": {
+        "type": "object",
+        "properties": {
+          "account_number": {
+            "pattern": "\\80341\\d{7}\\t{1}",
+            "type": "string"
+          },
+          "password": {
+            "maximum": 6,
+            "minimum": 6,
+            "type": "integer",
+            "format": "password"
+          }
+        }
+      },
+      "Resource": {
+        "type": "object",
+        "properties": {
+          "resource": {
+            "type": "string"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "civility": {
+            "maxLength": 6,
+            "minLength": 2,
+            "type": "string"
+          },
+          "firstname": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "birthday": {
+            "type": "string",
+            "format": "date"
+          },
+          "street": {
+            "type": "string"
+          },
+          "street number": {
+            "type": "integer"
+          },
+          "zipcode": {
+            "type": "integer"
+          }
+        },
+        "xml": {
+          "name": "User"
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "accountNumber": {
+            "pattern": "\\80341\\d{7}\\t{1}",
+            "type": "string"
+          },
+          "password": {
+            "maximum": 6,
+            "minimum": 6,
+            "type": "integer",
+            "format": "password"
+          }
+        },
+        "xml": {
+          "name": "UserResponse"
+        }
+      },
+      "Token": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        }
+      },
+      "Transfer": {
+        "type": "object",
+        "properties": {
+          "Amount": {
+            "type": "integer"
+          },
+          "interne_ou_externe": {
+            "type": "string"
+          },
+          "account_target": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "Transferresponse": {
+        "type": "object",
+        "properties": {
+          "Status": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "integer"
+          }
+        }
+      },
+      "creditdebit": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "type": "string"
+          },
+          "Amount": {
+            "type": "integer"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "from": {
+            "type": "string"
+          },
+          "ref": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "UnauthorizedError": {
+        "description": "Access token is missing or invalid"
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "description": "JWT",
+        "name": "Authorization",
+        "in": "header"
+      }
+    }
+  }
+}
